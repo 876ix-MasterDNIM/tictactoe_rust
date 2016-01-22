@@ -207,3 +207,4 @@ fn win(icon: &'static str, board: &GameBoard) -> bool {
 // TODO: Proper error handling.
 // TODO: Add loop to ask to play again.
 // TODO: More I can't think of right now???
+// TODO: Better logic for plays made by the computer.
