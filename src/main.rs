@@ -1,4 +1,7 @@
 #![allow(dead_code)]
+#![allow(dead_code)]
+#![allow(unused_assignments)]
+#![allow(unused_variables)]
 extern crate rand;
 use rand::Rng;
 use std::io;
@@ -6,7 +9,6 @@ fn main() {
     Game::start();
 }
 
-// TODO: IMPLEMENT FILE METHODS
 // struct FileHandler {
 //     file_name: &'static str,
 // }
@@ -71,9 +73,6 @@ impl Player {
     }
 }
 struct Game;
-#[allow(dead_code)]
-#[allow(unused_assignments)]
-#[allow(unused_variables)]
 impl Game {
     fn start() {
         let mut board = GameBoard::new();
@@ -111,28 +110,47 @@ impl Game {
                             on.\nNB: You can only make a play in a block that is unoccupied";
         println!("You choose icon: {}\n{}", player_icon, instructions);
 
-        let play_first = rand::thread_rng().gen_range(0, 2);
-        if play_first == 0 {
-            println!("Player's turn: ");
-            let mut index_str = String::new();
-            io::stdin().read_line(&mut index_str).ok();
-            let mut index = index_str.trim().parse::<usize>().unwrap();
-            loop {
-                if let Some(i) = board.board[index] {
-                    println!("That space is occupied or doesnt exist. Enter another block.");
-                    index_str = "".to_owned();
-                    io::stdin().read_line(&mut index_str).ok();
-                    index = index_str.trim().parse::<usize>().unwrap();
-                } else {
-                    player_play(index, player_icon, &mut board);
-                    println!("{}", board.display_board());
-                    break;
+        let mut turn = rand::thread_rng().gen_range(0, 2);
+        'game_loop: loop {
+            if turn == 0 {
+                println!("Player's turn: ");
+                let mut index_str = String::new();
+                io::stdin().read_line(&mut index_str).ok();
+                let mut index = index_str.trim().parse::<usize>().unwrap();
+                loop {
+                    if let Some(i) = board.board[index] {
+                        println!("That space is occupied or doesnt exist. Enter another block.");
+                        index_str = "".to_owned();
+                        io::stdin().read_line(&mut index_str).ok();
+                        index = index_str.trim().parse::<usize>().unwrap();
+                    } else {
+                        player_play(index, player_icon, &mut board);
+                        if board_full(&board) {
+                            println!("Game was a draw.");
+                            break 'game_loop;
+                        } else if win(player_icon, &board) {
+                            println!("Congratz you won.");
+                            println!("{}", board.display_board());
+                            break 'game_loop;
+                        }
+                        turn = 1;
+                        println!("{}", board.display_board());
+                        break;
+                    }
                 }
+            } else {
+                comp_play(comp_icon, &mut board);
+                if board_full(&board) {
+                    println!("Game was a draw.");
+                    break 'game_loop;
+                }
+                if win(comp_icon, &board) {
+                    println!("Sorry but you lost to the computer.");
+                    break 'game_loop;
+                }
+                println!("{}", board.display_board());
+                turn = 0;
             }
-            // TODO: IMPLEMENT error handling
-            // player_play(index.unwrap(), player_icon);
-        } else {
-            comp_play(comp_icon, &mut board);
         }
     }
 }
@@ -142,12 +160,50 @@ fn player_play(i: usize, player_icon: &'static str, board: &mut GameBoard) {
 }
 
 fn comp_play(comp_icon: &'static str, board: &mut GameBoard) {
-    let mut index = rand::thread_rng().gen_range(0, 8);
+    let mut index = rand::thread_rng().gen_range(0, 9);
     loop {
         if let Some(i) = board.board[index] {
-            index = rand::thread_rng().gen_range(0, 8);
+            index = rand::thread_rng().gen_range(0, 9);
         } else {
             board.board[index] = Some(comp_icon);
+            break;
         }
     }
 }
+
+fn board_full(board: &GameBoard) -> bool {
+    for i in 0..board.board.len() {
+        if board.board[i] == None {
+            return false;
+        }
+    }
+    true
+}
+
+fn win(icon: &'static str, board: &GameBoard) -> bool {
+    if (board.board[0] == Some(icon) && board.board[1] == Some(icon) &&
+        board.board[2] == Some(icon)) ||
+       (board.board[3] == Some(icon) && board.board[4] == Some(icon) &&
+        board.board[5] == Some(icon)) ||
+       (board.board[6] == Some(icon) && board.board[7] == Some(icon) &&
+        board.board[8] == Some(icon)) ||
+       (board.board[0] == Some(icon) && board.board[3] == Some(icon) &&
+        board.board[6] == Some(icon)) ||
+       (board.board[2] == Some(icon) && board.board[4] == Some(icon) &&
+        board.board[6] == Some(icon)) ||
+       (board.board[0] == Some(icon) && board.board[4] == Some(icon) &&
+        board.board[8] == Some(icon)) ||
+       (board.board[1] == Some(icon) && board.board[4] == Some(icon) &&
+        board.board[7] == Some(icon)) ||
+       (board.board[2] == Some(icon) && board.board[5] == Some(icon) &&
+        board.board[8] == Some(icon)) {
+        return true;
+    }
+    false
+}
+
+
+// TODO: Implement file related code (keeps track of all players who ever played. file sorted in decreasing order by number of games won... etc??).
+// TODO: Proper error handling.
+// TODO: Add loop to ask to play again.
+// TODO: More I can't think of right now???
